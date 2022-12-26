@@ -19,10 +19,13 @@ typedef struct {
 } CharArray;
 
 // Array Function Types
-typedef void (*IntArrayFunction) (int, int);
-typedef void (*FloatArrayFunction)(float, int);
-typedef void (*CharArrayFunction)(char, int);
+typedef void (*IntArrayForeachFunction) (int, int, IntArray);
+typedef void (*FloatArrayForeachFunction)(float, int, FloatArray);
+typedef void (*CharArrayForeachFunction)(char, int, CharArray);
 
+typedef int (*IntArrayFilterFunction) (int, int, IntArray);
+typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
+typedef int (*CharArrayFilterFunction)(char, int, CharArray);
 
 #define Array_resize(array, function) _Generic((array),				\
 	IntArray: Array_resize_int,										\
@@ -35,6 +38,12 @@ typedef void (*CharArrayFunction)(char, int);
 	IntArray: Array_foreach_int,									\
 	FloatArray: Array_foreach_float,								\
 	CharArray: Array_foreach_char									\
+)(array, function);
+
+#define Array_filter(array, function) _Generic((array),				\
+	IntArray: Array_filter_int,										\
+	FloatArray: Array_filter_float,									\
+	CharArray: Array_filter_char									\
 )(array, function);
 
 #define Array_destroy(array) _Generic((array),						\
@@ -52,7 +61,7 @@ typedef void (*CharArrayFunction)(char, int);
 
 
 #define Array_concat(array, elements, length) _Generic((elements),	\
-	IntArray: Array_push_concat_arr_int,							\
+	IntArray: Array_concat_arr_int,									\
 	FloatArray: Array_concat_arr_float,								\
 	CharArray: Array_concat_arr_char,								\
 	int*: Array_concat_int,											\
@@ -67,6 +76,7 @@ typedef void (*CharArrayFunction)(char, int);
 )(elements, length);
 
 
+// Creates an array by allocating memory to it
 IntArray IntArray_create (int length) {
 	// Allocates [length] * sizeof(int) bytes of memory and points array.arr to it
 	IntArray array;
@@ -98,6 +108,8 @@ CharArray CharArray_create (int length) {
 	return array;	
 }
 
+
+// Creates a array from an existing array
 IntArray Array_from_int (int* elements, int length) {
 	IntArray from = IntArray_create(length);
 	for (int i = 0; i < length; i++) {
@@ -120,6 +132,8 @@ CharArray Array_from_char (char* elements, int length) {
 	return from;
 }
 
+
+// Resizes an array by allocation/deallocating memory
 IntArray Array_resize_int (IntArray array, int resize_factor) {
 
 	// resize_factor > 0 -> allocates more memory to array;
@@ -148,6 +162,8 @@ CharArray Array_resize_char (CharArray array, int resize_factor) {
 	return array;
 }
 
+
+// Destroys the array by freeing the memory allocated to it
 void Array_destroy_int (IntArray array) {
 	free(array.arr);
 }
@@ -158,38 +174,8 @@ void Array_destroy_char (CharArray array) {
 	free(array.arr);
 }
 
-void Array_foreach_int (IntArray array, IntArrayFunction function) {
-	for (int i = 0; i < array.length; i++) {
-		function(array.arr[i], i);
-	}
-}
-void Array_foreach_float (FloatArray array, FloatArrayFunction function) {
-	for (int i = 0; i < array.length; i++) {
-		function(array.arr[i], i);
-	}
-}
-void Array_foreach_char (CharArray array, CharArrayFunction function) {
-	for (int i = 0; i < array.length; i++) {
-		function(array.arr[i], i);
-	}
-}
 
-IntArray Array_push_int (IntArray array, int element) {
-	array = Array_resize(array, 1);
-	array.arr[array.length - 1] = element;
-	return array;
-}
-FloatArray Array_push_float (FloatArray array, float element) {
-	array = Array_resize(array, 1);
-	array.arr[array.length - 1] = element;
-	return array;
-}
-CharArray Array_push_char (CharArray array, char element) {
-	array = Array_resize(array, 1);
-	array.arr[array.length - 1] = element;
-	return array;
-}
-
+// Joins an array or Int/Float/CharArray to existing Int/Float/CharArray
 IntArray Array_concat_arr_int (IntArray array, IntArray concat, int length) {
 	int prev_length = array.length;
 	array = Array_resize(array, concat.length);
@@ -237,5 +223,71 @@ CharArray Array_concat_char (CharArray array, char* concat, int length) {
 		array.arr[prev_length + i] = concat[i];
 	}
 	return array;
+}
+
+
+/* Loops over the array and runs a callback with each turn
+   Callback receives the current element and the current index */
+void Array_foreach_int (IntArray array, IntArrayForeachFunction function) {
+	for (int i = 0; i < array.length; i++) {
+		function(array.arr[i], i, array);
+	}
+}
+void Array_foreach_float (FloatArray array, FloatArrayForeachFunction function) {
+	for (int i = 0; i < array.length; i++) {
+		function(array.arr[i], i, array);
+	}
+}
+void Array_foreach_char (CharArray array, CharArrayForeachFunction function) {
+	for (int i = 0; i < array.length; i++) {
+		function(array.arr[i], i, array);
+	}
+}
+
+
+// Adds an element to the end of the array
+IntArray Array_push_int (IntArray array, int element) {
+	array = Array_resize(array, 1);
+	array.arr[array.length - 1] = element;
+	return array;
+}
+FloatArray Array_push_float (FloatArray array, float element) {
+	array = Array_resize(array, 1);
+	array.arr[array.length - 1] = element;
+	return array;
+}
+CharArray Array_push_char (CharArray array, char element) {
+	array = Array_resize(array, 1);
+	array.arr[array.length - 1] = element;
+	return array;
+}
+
+
+/* Loops over the array and runs a callback with each turn
+   If callback returns 1, keeps the element in the array. Otherwise, removes it.
+   This function does not alter the original array. */
+IntArray Array_filter_int (IntArray array, IntArrayFilterFunction function) {
+	IntArray filtered = IntArray_create(0);
+	for (int i = 0; i < array.length; i++) {
+		int should_add = function(array.arr[i], i, array);
+		if (should_add) filtered = Array_push_int(filtered, array.arr[i]);
+	}
+	return filtered;
+}
+FloatArray Array_filter_float (FloatArray array, FloatArrayFilterFunction function) {
+	FloatArray filtered = FloatArray_create(0);
+	for (int i = 0; i < array.length; i++) {
+		int should_add = function(array.arr[i], i, array);
+		if (should_add) filtered = Array_push_float(filtered, array.arr[i]);
+	}
+	return filtered;
+}
+CharArray Array_filter_char (CharArray array, CharArrayFilterFunction function) {
+	CharArray filtered = CharArray_create(0);
+	for (int i = 0; i < array.length; i++) {
+		int should_add = function(array.arr[i], i, array);
+		if (should_add) filtered = Array_push_char(filtered, array.arr[i]);
+	}
+	return filtered;
 }
 
