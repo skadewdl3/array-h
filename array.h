@@ -18,6 +18,10 @@ typedef struct {
 	int length;
 } CharArray;
 
+typedef enum {
+	OUT_OF_BOUNDS
+} ArrayError;
+
 // Array Function Types
 typedef void (*IntArrayForeachFunction) (int, int, IntArray);
 typedef void (*FloatArrayForeachFunction)(float, int, FloatArray);
@@ -26,6 +30,22 @@ typedef void (*CharArrayForeachFunction)(char, int, CharArray);
 typedef int (*IntArrayFilterFunction) (int, int, IntArray);
 typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
 typedef int (*CharArrayFilterFunction)(char, int, CharArray);
+
+typedef void (*IntArraySetFunction) (int, int);
+typedef void (*FloatArraySetFunction) (float, int);
+typedef void (*CharArraySetFunction) (char, int);
+
+
+typedef int (*IntArrayGetFunction) (int);
+typedef float (*FloatArrayGetFunction) (int);
+typedef char (*CharArrayGetFunction) (int);
+
+typedef void (*ArraySwapFunction) (int, int);
+
+
+typedef void (*IntArraySortFunction) (IntArray, IntArrayGetFunction, IntArraySetFunction, ArraySwapFunction);
+typedef void (*FloatArraySortFunction)(FloatArray, FloatArrayGetFunction, FloatArraySetFunction, ArraySwapFunction);
+typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArraySetFunction, ArraySwapFunction);
 
 #define Array_resize(array, function) _Generic((array),				\
 	IntArray: Array_resize_int,										\
@@ -75,6 +95,27 @@ typedef int (*CharArrayFilterFunction)(char, int, CharArray);
 	char*: Array_from_char											\
 )(elements, length);
 
+
+#define Array_sort(array, sorter) _Generic((array),					\
+	IntArray: Array_sort_int,													\
+	FloatArray: Array_sort_float,												\
+	CharArray: Array_sort_char													\
+)(array, sorter);
+
+#define Array_get(array, index) _Generic((array),					\
+	IntArray: Array_get_int,													\
+	FloatArray: Array_get_float,												\
+	CharArray: Array_get_char													\
+)(array, index);
+
+
+
+void Array_error (ArrayError err) {
+	switch (err) {
+	case OUT_OF_BOUNDS:
+		printf("You tried to acces an element past the arrays length. Use [Array_expand] to increase the length or make sure that your code accesses an element within the bounds of the array.");
+	}
+}
 
 // Creates an array by allocating memory to it
 IntArray IntArray_create (int length) {
@@ -291,3 +332,161 @@ CharArray Array_filter_char (CharArray array, CharArrayFilterFunction function) 
 	return filtered;
 }
 
+int Array_get_int (IntArray array, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+		return 0;
+	}
+	return array.arr[index];
+}
+
+float Array_get_float (FloatArray array, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+		return 0;
+	}
+	return array.arr[index];
+}
+
+char Array_get_char (CharArray array, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+		return '\0';
+	}
+	return array.arr[index];
+}
+
+IntArray Array_set_int (IntArray array, int element, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	else {
+		array.arr[index] = element;
+	}
+	return array;
+}
+
+FloatArray Array_set_float (FloatArray array, float element, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	else {
+		array.arr[index] = element;
+	}
+	return array;
+}
+
+CharArray Array_set_char (CharArray array, char element, int index) {
+	if (!(array.length > index)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	else {
+		array.arr[index] = element;
+	}
+	return array;
+}
+
+
+IntArray Array_sort_int (IntArray array, IntArraySortFunction function) {
+	IntArray sorted = IntArray_create(array.length);
+	for (int i = 0; i < sorted.length; i++) {
+		sorted.arr[i] = array.arr[i];
+	}
+	int get (int index) {
+		return Array_get_int(sorted, index);
+	}
+	void set (int element, int index) {
+		sorted = Array_set_int(sorted, element, index);
+	}
+	void swap (int index1, int index2) {
+		int temp = sorted.arr[index1];
+		sorted.arr[index1] = sorted.arr[index2];
+		sorted.arr[index2] = temp;
+	}
+	function(sorted, get, set, swap);
+	return sorted;
+}
+FloatArray Array_sort_float (FloatArray array, FloatArraySortFunction function) {
+	FloatArray sorted = FloatArray_create(array.length);
+	for (int i = 0; i < sorted.length; i++) {
+		sorted.arr[i] = array.arr[i];
+	}
+	float get (int index) {
+		return Array_get_float(sorted, index);
+	}
+	void set (float element, int index) {
+		sorted = Array_set_float(sorted, element, index);	
+	}
+	void swap (int index1, int index2) {
+		float temp = sorted.arr[index1];
+		sorted.arr[index1] = sorted.arr[index2];
+		sorted.arr[index2] = temp;
+	}
+	function(sorted, get, set, swap);
+	return sorted;
+}
+CharArray Array_sort_char (CharArray array, CharArraySortFunction function) {
+	CharArray sorted = CharArray_create(array.length);
+	for (int i = 0; i < sorted.length; i++) {
+		sorted.arr[i] = array.arr[i];
+	}
+	char get (int index) {
+		return Array_get_char(sorted, index);
+	}
+	void set (char element, int index) {
+		sorted = Array_set_char(sorted, element, index);
+	}
+	void swap (int index1, int index2) {
+		char temp = sorted.arr[index1];
+		sorted.arr[index1] = sorted.arr[index2];
+		sorted.arr[index2] = temp;
+	}
+	function(sorted, get, set, swap);
+	return sorted;
+}
+
+void INT_ARRAY_BUBBLE_SORTER (IntArray sorted, IntArrayGetFunction get, IntArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length; i++) {
+		int swaps = 0;		
+		for (int j = 0; j < sorted.length - i; j++) {
+			if (j != 0) {
+				if (get(j) < get(j - 1)) {
+					swaps++;
+					swap(j, j - 1);
+				}
+			} 
+		}
+		if (swaps == 0) break;
+	}
+}
+
+
+void FLOAT_ARRAY_BUBBLE_SORTER (FloatArray sorted, FloatArrayGetFunction get, FloatArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length; i++) {
+		int swaps = 0;		
+		for (int j = 0; j < sorted.length - i; j++) {
+			if (j != 0) {
+				if (get(j) < get(j - 1)) {
+					swaps++;
+					swap(j, j - 1);
+				}
+			} 
+		}
+		if (swaps == 0) break;
+	}
+}
+
+void CHAR_ARRAY_BUBBLE_SORTER (CharArray sorted, CharArrayGetFunction get, CharArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length; i++) {
+		int swaps = 0;		
+		for (int j = 0; j < sorted.length - i; j++) {
+			if (j != 0) {
+				if (get(j) < get(j - 1)) {
+					swaps++;
+					swap(j, j - 1);
+				}
+			} 
+		}
+		if (swaps == 0) break;
+	}
+}

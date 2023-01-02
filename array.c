@@ -1,40 +1,25 @@
 #include <stdio.h>
 #include "array.h"
 
-void print (char el, int index, CharArray arr) {
-	printf("(%d): %c\n", index, el);
-}
-
-char increment (int element, int index) {
-	return (element + index);
-}
-
-
-int filter (char element, int index, CharArray arr) {
-	if (element == 'a' || element == 'c') return 0;
-	return 1;
+void print (float el, int index, FloatArray arr) {
+	printf("(%d): %f\n", index, el);
 }
 
 int main () {
-	char numbers[] = {'a', 'b', 'c', 'c', 'd', 'e'};
-	char numbers2[] = {'a', 'b'};
-	CharArray array = Array_from(numbers, 6);
-	CharArray array2 = Array_from(numbers2, 2);
+
+	float floats[] = {2, 3.009, 3.008, 6, 5, 7};
+	FloatArray array = Array_from(floats, 6);
 
 	Array_foreach(array, print);
 	printf("\n");
 
-	array = Array_concat(array, array2, 2);
+	FloatArray sorted = Array_sort(array, FLOAT_ARRAY_BUBBLE_SORTER);	
+	float item = Array_get(sorted, 5)
 
-	Array_foreach(array, print);
+	printf("\n\ngetting: %d\n\n", item);
+	Array_foreach(sorted, print);
 	printf("\n");
-
-	CharArray filtered = Array_filter(array, filter)
-
-	Array_foreach(filtered, print);
-	printf("\n");
-
-
 
 	Array_destroy(array);
+	Array_destroy(sorted);
 }	
