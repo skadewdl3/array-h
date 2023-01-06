@@ -19,13 +19,18 @@ typedef struct {
 } CharArray;
 
 typedef enum {
-	OUT_OF_BOUNDS
+	OUT_OF_BOUNDS, MEM_ALLOC_FAIL, MEM_REALLOC_FAIL
 } ArrayError;
 
 // Array Function Types
 typedef void (*IntArrayForeachFunction) (int, int, IntArray);
 typedef void (*FloatArrayForeachFunction)(float, int, FloatArray);
 typedef void (*CharArrayForeachFunction)(char, int, CharArray);
+
+
+typedef int (*IntArrayMapFunction) (int, int, IntArray);
+typedef int (*FloatArrayMapFunction)(float, int, FloatArray);
+typedef int (*CharArrayMapFunction)(char, int, CharArray);
 
 typedef int (*IntArrayFilterFunction) (int, int, IntArray);
 typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
@@ -48,51 +53,57 @@ typedef void (*FloatArraySortFunction)(FloatArray, FloatArrayGetFunction, FloatA
 typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArraySetFunction, ArraySwapFunction);
 
 #define Array_resize(array, function) _Generic((array),				\
-	IntArray: Array_resize_int,										\
-	FloatArray: Array_resize_float,									\
-	CharArray: Array_resize_char									\
+	IntArray: Array_resize_int,												\
+	FloatArray: Array_resize_float,											\
+	CharArray: Array_resize_char												\
 )(array, function);
 
 
-#define Array_foreach(array, function) _Generic((array),			\
-	IntArray: Array_foreach_int,									\
-	FloatArray: Array_foreach_float,								\
-	CharArray: Array_foreach_char									\
+#define Array_foreach(array, function) _Generic((array),				\
+	IntArray: Array_foreach_int,												\
+	FloatArray: Array_foreach_float,											\
+	CharArray: Array_foreach_char												\
 )(array, function);
 
 #define Array_filter(array, function) _Generic((array),				\
-	IntArray: Array_filter_int,										\
-	FloatArray: Array_filter_float,									\
-	CharArray: Array_filter_char									\
+	IntArray: Array_filter_int,												\
+	FloatArray: Array_filter_float,											\
+	CharArray: Array_filter_char												\
 )(array, function);
 
-#define Array_destroy(array) _Generic((array),						\
-	IntArray: Array_destroy_int,									\
-	FloatArray: Array_destroy_float,								\
-	CharArray: Array_destroy_char									\
+#define Array_destroy(array) _Generic((array),							\
+	IntArray: Array_destroy_int,												\
+	FloatArray: Array_destroy_float,											\
+	CharArray: Array_destroy_char												\
 )(array);
 
 
-#define Array_push(array, element) _Generic((array),				\
-	IntArray: Array_push_int,										\
-	FloatArray: Array_push_float,									\
-	CharArray: Array_push_char										\
+#define Array_push(array, element) _Generic((array),					\
+	IntArray: Array_push_int,													\
+	FloatArray: Array_push_float,												\
+	CharArray: Array_push_char													\
 )(array, element);
 
 
-#define Array_concat(array, elements, length) _Generic((elements),	\
-	IntArray: Array_concat_arr_int,									\
-	FloatArray: Array_concat_arr_float,								\
-	CharArray: Array_concat_arr_char,								\
-	int*: Array_concat_int,											\
-	float*: Array_concat_float,										\
-	char*: Array_concat_char										\
+#define Array_unshift(array, element) _Generic((array),				\
+	IntArray: Array_unshift_int,												\
+	FloatArray: Array_unshift_float,											\
+	CharArray: Array_unshift_char												\
+)(array, element);
+
+#define Array_concat(array, elements, length) _Generic((elements),\
+	IntArray: Array_concat_arr_int,											\
+	FloatArray: Array_concat_arr_float,										\
+	CharArray: Array_concat_arr_char,										\
+	int*: Array_concat_int,														\
+	float*: Array_concat_float,												\
+	char*: Array_concat_char													\
 )(array, elements, length);
 
 #define Array_from(elements, length) _Generic((elements),			\
-	int*: Array_from_int,											\
-	float*: Array_from_float,										\
-	char*: Array_from_char											\
+	int*: Array_from_int,														\
+	float*: Array_from_float,													\
+	char*: Array_from_char														\
 )(elements, length);
 
 
@@ -102,18 +113,63 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 	CharArray: Array_sort_char													\
 )(array, sorter);
 
-#define Array_get(array, index) _Generic((array),					\
+#define Array_get(array, index) _Generic((array),						\
 	IntArray: Array_get_int,													\
 	FloatArray: Array_get_float,												\
 	CharArray: Array_get_char													\
 )(array, index);
 
 
+#define Array_set(array, element, index) _Generic((array),			\
+	IntArray: Array_set_int,													\
+	FloatArray: Array_set_float,												\
+	CharArray: Array_set_char													\
+)(array, element, index);
+
+
+#define Array_exists(array, element) _Generic((array),				\
+	IntArray: Array_exists_int,												\
+	FloatArray: Array_exists_float,											\
+	CharArray: Array_exists_char												\
+)(array, element);
+
+#define Array_remove(array, element) _Generic((array),				\
+	IntArray: Array_remove_int,												\
+	FloatArray: Array_remove_float,											\
+	CharArray: Array_remove_char												\
+)(array, element);
+
+#define Array_count(array, element) _Generic((array),					\
+	IntArray: Array_count_int,													\
+	FloatArray: Array_count_float,											\
+	CharArray: Array_count_char												\
+)(array, element);
+
+
+#define Array_slice(array, start, end) _Generic((array),				\
+	IntArray: Array_slice_int,													\
+	FloatArray: Array_slice_float,											\
+	CharArray: Array_slice_char												\
+)(array, start, end);
+
+#define Array_map(array, map) _Generic((array),							\
+	IntArray: Array_map_int,													\
+	FloatArray: Array_map_float,												\
+	CharArray: Array_map_char													\
+)(array, map);
+
 
 void Array_error (ArrayError err) {
 	switch (err) {
 	case OUT_OF_BOUNDS:
 		printf("You tried to acces an element past the arrays length. Use [Array_expand] to increase the length or make sure that your code accesses an element within the bounds of the array.");
+		break;
+	case MEM_ALLOC_FAIL:
+		printf("Memory allocation using [malloc] failed.");
+		break;
+	case MEM_REALLOC_FAIL:
+		printf("Memory reallocation using [realloc] failed.");
+		break;
 	}
 }
 
@@ -123,6 +179,10 @@ IntArray IntArray_create (int length) {
 	IntArray array;
 	array.length = length;
 	array.arr = malloc(length * sizeof(int));
+	if (array.arr == NULL) {
+		Array_error(MEM_ALLOC_FAIL);
+		return array;	
+	}
 	for (int i = 0; i < array.length; i++) {
 		array.arr[i] = 0;
 	}
@@ -133,6 +193,10 @@ FloatArray FloatArray_create (int length) {
 	FloatArray array;
 	array.length = length;
 	array.arr = malloc(length * sizeof(float));
+	if (array.arr == NULL) {
+		Array_error(MEM_ALLOC_FAIL);
+		return array;	
+	}
 	for (int i = 0; i < array.length; i++) {
 		array.arr[i] = 0;
 	}
@@ -143,6 +207,10 @@ CharArray CharArray_create (int length) {
 	CharArray array;
 	array.length = length;
 	array.arr = malloc(length * sizeof(char));
+	if (array.arr == NULL) {
+		Array_error(MEM_ALLOC_FAIL);
+		return array;	
+	}
 	for (int i = 0; i < array.length; i++) {
 		array.arr[i] = 0;
 	}
@@ -181,6 +249,10 @@ IntArray Array_resize_int (IntArray array, int resize_factor) {
 	// resize_factor < 0 -> deallocates some memory from array;
 
 	array.arr = realloc(array.arr, (array.length + resize_factor) * sizeof(int));
+	if (array.arr == NULL) {
+		Array_error(MEM_REALLOC_FAIL);
+		return array;	
+	}
 	array.length += resize_factor;
 	return array;
 }
@@ -190,6 +262,10 @@ FloatArray Array_resize_float (FloatArray array, int resize_factor) {
 	// resize_factor < 0 -> deallocates some memory from array;
 
 	array.arr = realloc(array.arr, (array.length + resize_factor) * sizeof(float));
+	if (array.arr == NULL) {
+		Array_error(MEM_REALLOC_FAIL);
+		return array;	
+	}
 	array.length += resize_factor;
 	return array;
 }
@@ -199,6 +275,10 @@ CharArray Array_resize_char (CharArray array, int resize_factor) {
 	// resize_factor < 0 -> deallocates some memory from array;
 
 	array.arr = realloc(array.arr, (array.length + resize_factor) * sizeof(char));
+	if (array.arr == NULL) {
+		Array_error(MEM_REALLOC_FAIL);
+		return array;	
+	}
 	array.length += resize_factor;
 	return array;
 }
@@ -303,6 +383,70 @@ CharArray Array_push_char (CharArray array, char element) {
 	return array;
 }
 
+IntArray Array_unshift_int (IntArray array, int element) {
+	IntArray unshifted = Array_resize(array, 1);
+	for (int i = 1; i < unshifted.length; i++) {
+		unshifted.arr[i] = array.arr[i - 1]; 
+	} 
+	unshifted.arr[0] = element;
+	return unshifted;
+}
+
+// Adds element to the start of the array
+FloatArray Array_unshift_float (FloatArray array, float element) {
+	FloatArray unshifted = Array_resize(array, 1);
+	for (int i = 1; i < unshifted.length; i++) {
+		unshifted.arr[i] = array.arr[i - 1]; 
+	} 
+	unshifted.arr[0] = element;
+	return unshifted;
+
+}
+
+CharArray Array_unshift_char (CharArray array, char element) {
+	CharArray unshifted = Array_resize(array, 1);
+	for (int i = 1; i < unshifted.length; i++) {
+		unshifted.arr[i] = array.arr[i - 1]; 
+	} 
+	unshifted.arr[0] = element;
+	return unshifted;
+}
+
+
+// Checks if at least one occurence of element is in array
+int Array_exists_int (IntArray array, int element) {
+	int found = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) {
+			found = 1;
+			break;
+		}
+	}
+	return found;
+}
+
+int Array_exists_float (FloatArray array, float element) {
+	int found = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) {
+			found = 1;
+			break;
+		}
+	}
+	return found;
+}
+
+int Array_exists_char (CharArray array, char element) {
+	int found = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) {
+			found = 1;
+			break;
+		}
+	}
+	return found;
+}
+
 
 /* Loops over the array and runs a callback with each turn
    If callback returns 1, keeps the element in the array. Otherwise, removes it.
@@ -331,6 +475,69 @@ CharArray Array_filter_char (CharArray array, CharArrayFilterFunction function) 
 	}
 	return filtered;
 }
+
+IntArray Array_map_int (IntArray array, IntArrayMapFunction function) {
+	IntArray mapped = IntArray_create(array.length);
+	for (int i = 0; i < array.length; i++) {
+		int new_el = function(array.arr[i], i, array);
+		mapped.arr[i] = new_el;
+	}
+	return mapped;
+}
+FloatArray Array_map_float (FloatArray array, FloatArrayMapFunction function) {
+	FloatArray mapped = FloatArray_create(array.length);
+		for (int i = 0; i < array.length; i++) {
+		float new_el = function(array.arr[i], i, array);
+		mapped.arr[i] = new_el;
+	}
+	return mapped;
+}
+CharArray Array_map_char (CharArray array, CharArrayMapFunction function) {
+	CharArray mapped = CharArray_create(array.length);
+		for (int i = 0; i < array.length; i++) {
+		char new_el = function(array.arr[i], i, array);
+		mapped.arr[i] = new_el;
+	}
+	return mapped;
+}
+
+
+
+// Deletes element at certain index and shifts all the other elements accordingly
+IntArray Array_remove_int (IntArray array, int index) {
+	if (!(index < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	int filter (int element, int i, IntArray arr) {
+		return (index != i);
+	}
+	IntArray updated = Array_filter_int(array, filter);
+	return updated;
+}
+
+
+FloatArray Array_remove_float (FloatArray array, int index) {
+	if (!(index < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	int filter (float element, int i, FloatArray arr) {
+		return (index != i);
+	}
+	FloatArray updated = Array_filter_float(array, filter);
+	return updated;
+}
+
+CharArray Array_remove_char (CharArray array, int index) {
+	if (!(index < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	int filter (char element, int i, CharArray arr) {
+		return (index != i);
+	}
+	CharArray updated = Array_filter_char(array, filter);
+	return updated;
+}
+
 
 int Array_get_int (IntArray array, int index) {
 	if (!(array.length > index)) {
@@ -386,6 +593,66 @@ CharArray Array_set_char (CharArray array, char element, int index) {
 	return array;
 }
 
+int Array_count_int (IntArray array, int element) {
+	int count = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) count++;
+	}
+	return count;
+}
+
+
+int Array_count_float (FloatArray array, float element) {
+	int count = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) count++;
+	}
+	return count;
+}
+
+
+int Array_count_char (CharArray array, char element) {
+	int count = 0;
+	for (int i = 0; i < array.length; i++) {
+		if (array.arr[i] == element) count++;
+	}
+	return count;
+}
+
+IntArray Array_slice_int (IntArray array, int start, int end) {
+	if (start < 0 || !(end < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	IntArray sliced = IntArray_create(end - start + 1);
+	for (int i = 0; i <= sliced.length; i++) {
+		sliced.arr[i] = array.arr[i + start]; 
+	}
+	return sliced;
+}
+
+
+FloatArray Array_slice_float (FloatArray array, int start, int end) {
+	if (start < 0 || !(end < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	FloatArray sliced = FloatArray_create(end - start + 1);
+	for (int i = 0; i <= sliced.length; i++) {
+		sliced.arr[i] = array.arr[i + start]; 
+	}
+	return sliced;
+}
+
+
+CharArray Array_slice_char (CharArray array, int start, int end) {
+	if (start < 0 || !(end < array.length)) {
+		Array_error(OUT_OF_BOUNDS);
+	}
+	CharArray sliced = CharArray_create(end - start + 1);
+	for (int i = 0; i <= sliced.length; i++) {
+		sliced.arr[i] = array.arr[i + start]; 
+	}
+	return sliced;
+}
 
 IntArray Array_sort_int (IntArray array, IntArraySortFunction function) {
 	IntArray sorted = IntArray_create(array.length);
@@ -488,5 +755,68 @@ void CHAR_ARRAY_BUBBLE_SORTER (CharArray sorted, CharArrayGetFunction get, CharA
 			} 
 		}
 		if (swaps == 0) break;
+	}
+}
+
+void INT_ARRAY_SELECTION_SORTER (IntArray sorted, IntArrayGetFunction get, IntArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length - 1; i++) {
+		int min_index = i;
+		for (int j = i; j < sorted.length; j++) {
+			if (get(j) < get(min_index)) min_index = j;
+		}
+		if (min_index == i) break;
+		swap(i, min_index);
+	}
+}
+
+void FLOAT_ARRAY_SELECTION_SORTER (FloatArray sorted, FloatArrayGetFunction get, FloatArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length - 1; i++) {
+		int min_index = i;
+		for (int j = i; j < sorted.length; j++) {
+			if (get(j) < get(min_index)) min_index = j;
+		}
+		if (min_index == i) break;
+		swap(i, min_index);
+	}
+}
+
+void CHAR_ARRAY_SELECTION_SORTER (CharArray sorted, CharArrayGetFunction get, CharArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 0; i < sorted.length - 1; i++) {
+		int min_index = i;
+		for (int j = i; j < sorted.length; j++) {
+			if (get(j) < get(min_index)) min_index = j;
+		}
+		if (min_index == i) break;
+		swap(i, min_index);
+	}
+}
+
+void INT_ARRAY_INSERTION_SORTER (IntArray sorted, IntArrayGetFunction get, IntArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 1; i < sorted.length; i++) {
+		int j = i - 1;
+		while (j >= 0 && get(j) < get(j - 1)) {
+			swap(j, j - 1);
+			j--;
+		}
+	}
+}
+
+void FLOAT_ARRAY_INSERTION_SORTER (FloatArray sorted, FloatArrayGetFunction get, FloatArraySetFunction set, ArraySwapFunction swap) {
+		for (int i = 1; i < sorted.length; i++) {
+		int j = i - 1;
+		while (j >= 0 && get(j) < get(j - 1)) {
+			swap(j, j - 1);
+			j--;
+		}
+	}
+}
+
+void CHAR_ARRAY_INSERTION_SORTER (CharArray sorted, CharArrayGetFunction get, CharArraySetFunction set, ArraySwapFunction swap) {
+	for (int i = 1; i < sorted.length; i++) {
+		int j = i - 1;
+		while (j >= 0 && get(j) < get(j - 1)) {
+			swap(j, j - 1);
+			j--;
+		}
 	}
 }

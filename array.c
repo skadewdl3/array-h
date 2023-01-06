@@ -1,25 +1,31 @@
 #include <stdio.h>
 #include "array.h"
 
-void print (float el, int index, FloatArray arr) {
-	printf("(%d): %f\n", index, el);
+void print (int el, int index, IntArray arr) {
+	printf("(%d): %d\n", index, el);
+}
+
+int map (int el, int index, IntArray arr) {
+	return ++el;
 }
 
 int main () {
 
-	float floats[] = {2, 3.009, 3.008, 6, 5, 7};
-	FloatArray array = Array_from(floats, 6);
 
-	Array_foreach(array, print);
+	int length;
+	int sum = 0;
+
+	int integers[] = {-1, 3, 0, 8, 88, -103};
+
+	IntArray array = Array_from(integers, 6);
+
 	printf("\n");
 
-	FloatArray sorted = Array_sort(array, FLOAT_ARRAY_BUBBLE_SORTER);	
-	float item = Array_get(sorted, 5)
-
-	printf("\n\ngetting: %d\n\n", item);
-	Array_foreach(sorted, print);
+	IntArray mapped = Array_map(array, map);
+	Array_foreach(mapped, print);
 	printf("\n");
 
 	Array_destroy(array);
-	Array_destroy(sorted);
+	Array_destroy(mapped);
+
 }	
