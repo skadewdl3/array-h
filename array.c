@@ -4,7 +4,7 @@
 void print (float el, int index, FloatArray arr) {
 	printf("(%d): %f\n", index, el);
 }
-
+printf("pull request test");
 int main () {
 
 	float floats[] = {2, 3.009, 3.008, 6, 5, 7};
