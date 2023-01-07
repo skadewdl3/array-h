@@ -14,18 +14,17 @@ int main () {
 
 	int length;
 	int sum = 0;
+	int integers[] = {1, 4, 5, 10, -1, -100};
 
-	int integers[] = {-1, 3, 0, 8, 88, -103};
+	IntArray arr = Array_from(integers, 6);
+	IntArray sorted = Array_sort(arr, INT_ARRAY_SELECTION_SORTER);
 
-	IntArray array = Array_from(integers, 6);
 
-	printf("\n");
+	Array_foreach(arr, print);
+ 	printf("\n\n");
+	Array_foreach(sorted, print);
 
-	IntArray mapped = Array_map(array, map);
-	Array_foreach(mapped, print);
-	printf("\n");
-
-	Array_destroy(array);
-	Array_destroy(mapped);
+	Array_destroy(arr);
+	Array_destroy(sorted);
 
 }	
