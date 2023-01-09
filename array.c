@@ -16,8 +16,10 @@ int main () {
 	int sum = 0;
 	int integers[] = {1, 4, 5, 10, -1, -100};
 
-	IntArray arr = Array_from(integers, 6);
-	IntArray sorted = Array_sort(arr, INT_ARRAY_SELECTION_SORTER);
+	IntArray arr = IntArray_create(5);
+	IntArray concat = Array_from(integers, 6);
+ 	arr = Array_concat(arr, concat, 6);
+	IntArray sorted = Array_sort(arr, INT_ARRAY_BUBBLE_SORTER);
 
 
 	Array_foreach(arr, print);
