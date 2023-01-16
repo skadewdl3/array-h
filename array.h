@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "debug.h"
 
+// Some colors for better error messages
 #define RESET   "\033[0m"			// Reset color to default
 #define BLACK   "\033[30m"      	// Black
 #define RED     "\033[31m"      	// Red
@@ -12,6 +12,33 @@
 #define MAGENTA "\033[35m"      	// Magenta
 #define CYAN    "\033[36m"      	// Cyan
 #define WHITE   "\033[37m"      	// White
+
+// Enum with Error types
+typedef enum {
+	OUT_OF_BOUNDS, MEM_ALLOC_FAIL, MEM_REALLOC_FAIL , UNUSED_ACCESS
+} ArrayError;
+
+// Function for printing error messages
+void Array_error (ArrayError err) {
+	switch (err) {
+	case OUT_OF_BOUNDS:
+		printf(RED "\nLogical Error: [OUT_OF_BOUNDS]\n");
+		printf(YELLOW "Invalid index! You tried to access a negative index, or an index past the arrays length. Use [Array_resize] to increase the length or make sure that your code accesses an element within the bounds of the array.\n" RESET);
+		break;
+	case MEM_ALLOC_FAIL:
+		printf(RED "\nRuntime Error: [MEM_ALLOC_FAIL]\n");
+		printf(YELLOW "Memory allocation using malloc failed." RESET);
+		break;
+	case MEM_REALLOC_FAIL:
+		printf(RED "\nRuntime Error: [MEM_REALLOC_FAIL]\n");
+		printf(YELLOW "Memory reallocation using realloc failed." RESET);
+		break;
+	case UNUSED_ACCESS:
+		printf(RED "\nLogical Error: [UNUSED_ACCESS]\n");
+		printf(YELLOW "You tried to access an element you haven't used yet. [Array_set] can only modify used elements. Use [Array_insert] to assign a value to this element." RESET);
+		break;
+	}
+}
 
 // Array Types
 typedef struct {
@@ -32,9 +59,6 @@ typedef struct {
 	int length;
 } CharArray;
 
-typedef enum {
-	OUT_OF_BOUNDS, MEM_ALLOC_FAIL, MEM_REALLOC_FAIL
-} ArrayError;
 
 // Array Function Types
 typedef void (*IntArrayForeachFunction) (int, int, IntArray);
@@ -191,24 +215,6 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 	FloatArray: Array_insert_float,											\
 	CharArray: Array_insert_char												\
 )(array, element, index);
-
-
-void Array_error (ArrayError err) {
-	switch (err) {
-	case OUT_OF_BOUNDS:
-		printf(RED "\nLogical Error: [OUT_OF_BOUNDS]\n");
-		printf(YELLOW "Invalid index! You tried to access a negative index, or an index past the arrays length. Use [Array_resize] to increase the length or make sure that your code accesses an element within the bounds of the array.\n" RESET);
-		break;
-	case MEM_ALLOC_FAIL:
-		printf(RED "\nRuntime Error: [MEM_ALLOC_FAIL]\n");
-		printf(YELLOW "Memory allocation using malloc failed." RESET);
-		break;
-	case MEM_REALLOC_FAIL:
-		printf(RED "\nRuntime Error: [MEM_REALLOC_FAIL]\n");
-		printf(YELLOW "Memory reallocation using realloc failed." RESET);
-		break;
-	}
-}
 
 // Creates an array by allocating memory to it
 IntArray IntArray_create (int length) {
@@ -661,7 +667,7 @@ CharArray Array_copy_char (CharArray array) {
 
 int Array_get_int (IntArray array, int index) {
 	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
+		Array_error(UNUSED_ACCESS);
 		return 0;
 	}
 	return array.items[index];
@@ -669,7 +675,7 @@ int Array_get_int (IntArray array, int index) {
 
 float Array_get_float (FloatArray array, int index) {
 	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
+		Array_error(UNUSED_ACCESS);
 		return 0;
 	}
 	return array.items[index];
@@ -677,15 +683,20 @@ float Array_get_float (FloatArray array, int index) {
 
 char Array_get_char (CharArray array, int index) {
 	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
-		return '\0';
+		Array_error(UNUSED_ACCESS);
+		return 0;
 	}
 	return array.items[index];
 }
 
 IntArray Array_set_int (IntArray array, int element, int index) {
-	if (!(index < array.used) || index < 0) {
+	if (!(index < array.used)) {
+		Array_error(UNUSED_ACCESS);
+		return array;
+	}
+	else if (!(index < array.length) || index < 0) {
 		Array_error(OUT_OF_BOUNDS);
+		return array;
 	}
 	if (index > array.used - 1) {
 		array.used = index + 1;
@@ -695,8 +706,13 @@ IntArray Array_set_int (IntArray array, int element, int index) {
 }
 
 FloatArray Array_set_float (FloatArray array, float element, int index) {
-	if (!(index < array.used) || index < 0) {
+	if (!(index < array.used)) {
+		Array_error(UNUSED_ACCESS);
+		return array;
+	}
+	else if (!(index < array.length) || index < 0) {
 		Array_error(OUT_OF_BOUNDS);
+		return array;
 	}
 	else {
 		array.items[index] = element;
@@ -705,8 +721,14 @@ FloatArray Array_set_float (FloatArray array, float element, int index) {
 }
 
 CharArray Array_set_char (CharArray array, char element, int index) {
-	if (!(index < array.used) || index < 0) {
+
+	if (!(index < array.used)) {
+		Array_error(UNUSED_ACCESS);
+		return array;
+	}
+	else if (!(index < array.length) || index < 0) {
 		Array_error(OUT_OF_BOUNDS);
+		return array;
 	}
 	else {
 		array.items[index] = element;

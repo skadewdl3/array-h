@@ -14,7 +14,7 @@ int main () {
 	Array_foreach(array, print);
 	printf("\n");
 
-	array = Array_delete(array, 9);
+	array = Array_insert(array, 99, 10);
 
 
 	Array_foreach(array, print);
