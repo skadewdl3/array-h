@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "debug.h"
+
+#define RESET   "\033[0m"			// Reset color to default
+#define BLACK   "\033[30m"      	// Black
+#define RED     "\033[31m"      	// Red
+#define GREEN   "\033[32m"      	// Green
+#define YELLOW  "\033[33m"      	// Yellow
+#define BLUE    "\033[34m"      	// Blue
+#define MAGENTA "\033[35m"      	// Magenta
+#define CYAN    "\033[36m"      	// Cyan
+#define WHITE   "\033[37m"      	// White
 
 // Array Types
 typedef struct {
@@ -109,6 +120,11 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 	char*: Array_from_char														\
 )(elements, length);
 
+#define Array_copy(elements) _Generic((elements),						\
+	IntArray: Array_copy_int,														\
+	FloatArray: Array_copy_float,													\
+	CharArray: Array_copy_char														\
+)(elements);
 
 #define Array_sort(array, sorter) _Generic((array),					\
 	IntArray: Array_sort_int,													\
@@ -136,11 +152,6 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 	CharArray: Array_exists_char												\
 )(array, element);
 
-#define Array_remove(array, element) _Generic((array),				\
-	IntArray: Array_remove_int,												\
-	FloatArray: Array_remove_float,											\
-	CharArray: Array_remove_char												\
-)(array, element);
 
 #define Array_count(array, element) _Generic((array),					\
 	IntArray: Array_count_int,													\
@@ -161,17 +172,40 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 	CharArray: Array_map_char													\
 )(array, map);
 
+#define Array_pop(array) _Generic((array),								\
+	IntArray: Array_pop_int,													\
+	FloatArray: Array_pop_float,												\
+	CharArray: Array_pop_char													\
+)(array);
+
+
+#define Array_delete(array, index) _Generic((array),					\
+	IntArray: Array_delete_int,												\
+	FloatArray: Array_delete_float,											\
+	CharArray: Array_delete_char												\
+)(array, index);
+
+
+#define Array_insert(array, element, index) _Generic((array),							\
+	IntArray: Array_insert_int,												\
+	FloatArray: Array_insert_float,											\
+	CharArray: Array_insert_char												\
+)(array, element, index);
+
 
 void Array_error (ArrayError err) {
 	switch (err) {
 	case OUT_OF_BOUNDS:
-		printf("You tried to acces an element past the arrays length. Use [Array_expand] to increase the length or make sure that your code accesses an element within the bounds of the array.");
+		printf(RED "\nLogical Error: [OUT_OF_BOUNDS]\n");
+		printf(YELLOW "Invalid index! You tried to access a negative index, or an index past the arrays length. Use [Array_resize] to increase the length or make sure that your code accesses an element within the bounds of the array.\n" RESET);
 		break;
 	case MEM_ALLOC_FAIL:
-		printf("Memory allocation using [malloc] failed.");
+		printf(RED "\nRuntime Error: [MEM_ALLOC_FAIL]\n");
+		printf(YELLOW "Memory allocation using malloc failed." RESET);
 		break;
 	case MEM_REALLOC_FAIL:
-		printf("Memory reallocation using [realloc] failed.");
+		printf(RED "\nRuntime Error: [MEM_REALLOC_FAIL]\n");
+		printf(YELLOW "Memory reallocation using realloc failed." RESET);
 		break;
 	}
 }
@@ -249,6 +283,7 @@ CharArray Array_from_char (char* elements, int length) {
 	from.used = length;
 	return from;
 }
+IntArray Array_from_int_arr (IntArray elements, int length);
 
 
 // Resizes an array by allocation/deallocating memory
@@ -263,6 +298,11 @@ IntArray Array_resize_int (IntArray array, int resize_factor) {
 		return array;	
 	}
 	array.length += resize_factor;
+	if (resize_factor > 0) {
+		for (int i = array.used; i < array.length; i++) {
+			array.items[i] = 0;
+		}	
+	}
 	return array;
 }
 FloatArray Array_resize_float (FloatArray array, int resize_factor) {
@@ -275,6 +315,12 @@ FloatArray Array_resize_float (FloatArray array, int resize_factor) {
 		Array_error(MEM_REALLOC_FAIL);
 		return array;	
 	}
+	if (resize_factor > 0) {
+		for (int i = array.used; i < array.length; i++) {
+			array.items[i] = 0;
+		}	
+	}
+
 	array.length += resize_factor;
 	return array;
 }
@@ -289,6 +335,12 @@ CharArray Array_resize_char (CharArray array, int resize_factor) {
 		return array;	
 	}
 	array.length += resize_factor;
+	if (resize_factor > 0) {
+		for (int i = array.used; i < array.length; i++) {
+			array.items[i] = 0;
+		}	
+	}
+
 	return array;
 }
 
@@ -387,7 +439,6 @@ CharArray Array_concat_char (CharArray array, char* concat, int length) {
 /* Loops over the array and runs a callback with each turn
    Callback receives the current element and the current index */
 void Array_foreach_int (IntArray array, IntArrayForeachFunction function) {
-	printf("\nUsed for: %d\n", array.used);
 	for (int i = 0; i < array.used; i++) {
 		function(array.items[i], i, array);
 	}
@@ -480,6 +531,22 @@ CharArray Array_unshift_char (CharArray array, char element) {
 	return array;
 }
 
+IntArray Array_pop_int (IntArray array) {
+	array.used--;
+	return array;
+}
+
+
+FloatArray Array_pop_float (FloatArray array) {
+	array.used--;
+	return array;
+}
+
+
+CharArray Array_pop_char (CharArray array) {
+	array.used--;
+	return array;	
+}
 
 // Checks if at least one occurence of element is in array
 int Array_exists_int (IntArray array, int element) {
@@ -523,7 +590,7 @@ IntArray Array_filter_int (IntArray array, IntArrayFilterFunction function) {
 	IntArray filtered = IntArray_create(0);
 	for (int i = 0; i < array.used; i++) {
 		int should_add = function(array.items[i], i, array);
-		if (should_add) filtered = Array_push_int(filtered, array.items[i]);
+		if (should_add) filtered = Array_push(filtered, array.items[i]);
 	}
 	return filtered;
 }
@@ -531,7 +598,7 @@ FloatArray Array_filter_float (FloatArray array, FloatArrayFilterFunction functi
 	FloatArray filtered = FloatArray_create(0);
 	for (int i = 0; i < array.used; i++) {
 		int should_add = function(array.items[i], i, array);
-		if (should_add) filtered = Array_push_float(filtered, array.items[i]);
+		if (should_add) filtered = Array_push(filtered, array.items[i]);
 	}
 	return filtered;
 }
@@ -539,7 +606,7 @@ CharArray Array_filter_char (CharArray array, CharArrayFilterFunction function) 
 	CharArray filtered = CharArray_create(0);
 	for (int i = 0; i < array.used; i++) {
 		int should_add = function(array.items[i], i, array);
-		if (should_add) filtered = Array_push_char(filtered, array.items[i]);
+		if (should_add) filtered = Array_push(filtered, array.items[i]);
 	}
 	return filtered;
 }
@@ -569,43 +636,28 @@ CharArray Array_map_char (CharArray array, CharArrayMapFunction function) {
 	return mapped;
 }
 
-
-
-// Deletes element at certain index and shifts all the other elements accordingly
-IntArray Array_remove_int (IntArray array, int index) {
-	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
+IntArray Array_copy_int (IntArray array) {
+	int filter (int el, int i, IntArray arr) {
+		return 1;
 	}
-	int filter (int element, int i, IntArray arr) {
-		return (index != i);
-	}
-	IntArray updated = Array_filter_int(array, filter);
-	return updated;
+	IntArray copied = Array_filter(array, filter);
+	return copied;
 }
-
-
-FloatArray Array_remove_float (FloatArray array, int index) {
-	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
+FloatArray Array_copy_float (FloatArray array) {
+	int filter (float el, int i, FloatArray arr) {
+		return 1;
 	}
-	int filter (float element, int i, FloatArray arr) {
-		return (index != i);
-	}
-	FloatArray updated = Array_filter_float(array, filter);
-	return updated;
+
+	FloatArray copied = Array_filter(array, filter);
+	return copied;
 }
-
-CharArray Array_remove_char (CharArray array, int index) {
-	if (!(index < array.used) || index < 0) {
-		Array_error(OUT_OF_BOUNDS);
+CharArray Array_copy_char (CharArray array) {
+	int filter (char el, int i, CharArray arr) {
+		return 1;
 	}
-	int filter (char element, int i, CharArray arr) {
-		return (index != i);
-	}
-	CharArray updated = Array_filter_char(array, filter);
-	return updated;
+	CharArray copied = Array_filter(array, filter);
+	return copied;
 }
-
 
 int Array_get_int (IntArray array, int index) {
 	if (!(index < array.used) || index < 0) {
@@ -726,6 +778,106 @@ CharArray Array_slice_char (CharArray array, int start, int end) {
 	return sliced;
 }
 
+IntArray Array_delete_int (IntArray array, int index) {
+	if (!(index < array.length) || index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	int filter (int el, int i, IntArray arr) {
+		return i != index;
+	}
+	array = Array_filter(array, filter);
+	return array;
+}
+
+FloatArray Array_delete_float (FloatArray array, int index) {
+	if (!(index < array.length) || index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	int filter (float el, int i, FloatArray arr) {
+		return i != index;
+	}
+	array = Array_filter(array, filter);
+	return array;
+}
+
+
+CharArray Array_delete_char (CharArray array, int index) {
+	if (!(index < array.length) || index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	int filter (char el, int i, CharArray arr) {
+		return i != index;
+	}
+	array = Array_filter(array, filter);
+	return array;
+}
+
+
+IntArray Array_insert_int (IntArray array, int element, int index) {
+	if (index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	IntArray inserted = Array_copy(array);
+	if (index > inserted.length - 1) {
+		inserted = Array_resize(inserted, index - inserted.length + 1);
+		inserted.used = index + 1;
+	}
+	else {
+		inserted.used++;
+	}
+	for (int i = index; i < inserted.used; i++) {
+		inserted.items[i + 1] = array.items[i];
+	}
+	inserted.items[index] = element;
+	return inserted;
+}
+
+
+FloatArray Array_insert_float (FloatArray array, float element, int index) {
+	if (index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	FloatArray inserted = Array_copy(array);
+	if (index > inserted.length - 1) {
+		inserted = Array_resize(inserted, index - inserted.length + 1);
+		inserted.used = index + 1;
+	}
+	else {
+		inserted.used++;
+	}
+	for (int i = index; i < inserted.used; i++) {
+		inserted.items[i + 1] = array.items[i];
+	}
+	inserted.items[index] = element;
+	return inserted;
+}
+
+
+CharArray Array_insert_char (CharArray array, char element, int index) {
+	if (index < 0) {
+		Array_error(OUT_OF_BOUNDS);
+		return array;
+	}
+	CharArray inserted = Array_copy(array);
+	if (index > inserted.length - 1) {
+		inserted = Array_resize(inserted, index - inserted.length + 1);
+		inserted.used = index + 1;
+	}
+	else {
+		inserted.used++;
+	}
+	for (int i = index; i < inserted.used; i++) {
+		inserted.items[i + 1] = array.items[i];
+	}
+	inserted.items[index] = element;
+	return inserted;
+}
+
 IntArray Array_sort_int (IntArray array, IntArraySortFunction function) {
 	IntArray sorted = IntArray_create(array.length);
 	sorted.used = array.used;
@@ -785,6 +937,18 @@ CharArray Array_sort_char (CharArray array, CharArraySortFunction function) {
 	}
 	function(sorted, get, set, swap);
 	return sorted;
+}
+
+void INT_ARRAY_PRINT (int el, int index, IntArray arr) {
+		printf("(%d): %d\n", index, el);
+}
+
+void FLOAT_ARRAY_PRINT (float el, int index, FloatArray arr) {
+		printf("(%d): %f\n", index, el);
+}
+
+void CHAR_ARRAY_PRINT (char el, int index, CharArray arr) {
+		printf("(%d): %c\n", index, el);
 }
 
 void INT_ARRAY_BUBBLE_SORTER (IntArray sorted, IntArrayGetFunction get, IntArraySetFunction set, ArraySwapFunction swap) {
