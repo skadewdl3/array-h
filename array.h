@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 // Some colors for better error messages
 #define RESET   "\033[0m"			// Reset color to default
@@ -59,29 +60,39 @@ typedef struct {
 	int length;
 } CharArray;
 
+typedef struct {
+	char** items;
+	int used;
+	int length;
+} StringArray;
 
 // Array Function Types
 typedef void (*IntArrayForeachFunction) (int, int, IntArray);
 typedef void (*FloatArrayForeachFunction)(float, int, FloatArray);
 typedef void (*CharArrayForeachFunction)(char, int, CharArray);
+typedef void (*StringArrayForeachFunction)(char*, int, StringArray);
 
 
 typedef int (*IntArrayMapFunction) (int, int, IntArray);
 typedef int (*FloatArrayMapFunction)(float, int, FloatArray);
 typedef int (*CharArrayMapFunction)(char, int, CharArray);
+typedef int (*StringArrayMapFunction)(char*, int, StringArray);
 
 typedef int (*IntArrayFilterFunction) (int, int, IntArray);
 typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
 typedef int (*CharArrayFilterFunction)(char, int, CharArray);
+typedef int (*StringArrayFilterFunction)(char*, int, StringArray);
 
 typedef void (*IntArraySetFunction) (int, int);
 typedef void (*FloatArraySetFunction) (float, int);
 typedef void (*CharArraySetFunction) (char, int);
+typedef void (*StringArraySetFunction) (char*, int);
 
 
 typedef int (*IntArrayGetFunction) (int);
 typedef float (*FloatArrayGetFunction) (int);
 typedef char (*CharArrayGetFunction) (int);
+typedef char* (*StringArrayGetFunction) (int);
 
 typedef void (*ArraySwapFunction) (int, int);
 
@@ -89,18 +100,21 @@ typedef void (*ArraySwapFunction) (int, int);
 typedef void (*IntArraySortFunction) (IntArray, IntArrayGetFunction, IntArraySetFunction, ArraySwapFunction);
 typedef void (*FloatArraySortFunction)(FloatArray, FloatArrayGetFunction, FloatArraySetFunction, ArraySwapFunction);
 typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArraySetFunction, ArraySwapFunction);
+typedef void (*StringArraySortFunction)(StringArray, StringArrayGetFunction, StringArraySetFunction, ArraySwapFunction);
 
 #define Array_resize(array, function) _Generic((array),				\
 	IntArray: Array_resize_int,												\
 	FloatArray: Array_resize_float,											\
-	CharArray: Array_resize_char												\
+	CharArray: Array_resize_char,												\
+	StringArray: Array_resize_string											\
 )(array, function);
 
 
 #define Array_foreach(array, function) _Generic((array),				\
 	IntArray: Array_foreach_int,												\
 	FloatArray: Array_foreach_float,											\
-	CharArray: Array_foreach_char												\
+	CharArray: Array_foreach_char,											\
+	StringArray: Array_foreach_string										\
 )(array, function);
 
 #define Array_filter(array, function) _Generic((array),				\
@@ -141,13 +155,14 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 #define Array_from(elements, length) _Generic((elements),			\
 	int*: Array_from_int,														\
 	float*: Array_from_float,													\
-	char*: Array_from_char														\
+	char*: Array_from_char,														\
+	char**: Array_from_string													\
 )(elements, length);
 
 #define Array_copy(elements) _Generic((elements),						\
-	IntArray: Array_copy_int,														\
-	FloatArray: Array_copy_float,													\
-	CharArray: Array_copy_char														\
+	IntArray: Array_copy_int,													\
+	FloatArray: Array_copy_float,												\
+	CharArray: Array_copy_char													\
 )(elements);
 
 #define Array_sort(array, sorter) _Generic((array),					\
@@ -210,7 +225,7 @@ typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArray
 )(array, index);
 
 
-#define Array_insert(array, element, index) _Generic((array),							\
+#define Array_insert(array, element, index) _Generic((array),		\
 	IntArray: Array_insert_int,												\
 	FloatArray: Array_insert_float,											\
 	CharArray: Array_insert_char												\
@@ -263,6 +278,21 @@ CharArray CharArray_create (int length) {
 	return array;	
 }
 
+StringArray StringArray_create (int length) {
+	StringArray array;
+	array.length = length;
+	array.used = 0;
+	array.items = malloc(length * sizeof(char*));
+	if (array.items == NULL) {
+		Array_error(MEM_ALLOC_FAIL);
+		return array;
+	}
+
+	for (int i = 0; i < array.length; i++) {
+		array.items[i] = "\0";
+	}
+	return array;
+}
 
 // Creates a array from an existing array
 IntArray Array_from_int (int* elements, int length) {
@@ -289,7 +319,14 @@ CharArray Array_from_char (char* elements, int length) {
 	from.used = length;
 	return from;
 }
-IntArray Array_from_int_arr (IntArray elements, int length);
+StringArray Array_from_string (char** elements, int length) {
+	StringArray from = StringArray_create(length);
+	for (int i = 0; i < length; i++) {
+		from.items[i] = elements[i];
+	}
+	from.used = length;
+	return from;
+}
 
 
 // Resizes an array by allocation/deallocating memory
@@ -348,6 +385,26 @@ CharArray Array_resize_char (CharArray array, int resize_factor) {
 	}
 
 	return array;
+}
+
+StringArray Array_resize_string (StringArray array, int resize_factor) {
+
+	// resize_factor > 0 -> allocates more memory to array;
+	// resize_factor < 0 -> deallocates some memory from array;
+
+	array.items = realloc(array.items, (array.length + resize_factor) * sizeof(char*));
+	if (array.items == NULL) {
+		Array_error(MEM_REALLOC_FAIL);
+		return array;	
+	}
+	array.length += resize_factor;
+	if (resize_factor > 0) {
+		for (int i = array.used; i < array.length; i++) {
+			array.items[i] = "\0";
+		}	
+	}
+
+	return array;	
 }
 
 
@@ -455,6 +512,11 @@ void Array_foreach_float (FloatArray array, FloatArrayForeachFunction function) 
 	}
 }
 void Array_foreach_char (CharArray array, CharArrayForeachFunction function) {
+	for (int i = 0; i < array.used; i++) {
+		function(array.items[i], i, array);
+	}
+}
+void Array_foreach_string (StringArray array, StringArrayForeachFunction function) {
 	for (int i = 0; i < array.used; i++) {
 		function(array.items[i], i, array);
 	}

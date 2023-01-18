@@ -1,24 +1,18 @@
 #include <stdio.h>
 #include "array.h"
 
-void print (int el, int index, IntArray array) {
-	printf("\n(%d): %d", index, el);
+void print (char* el, int index, StringArray array) {
+	printf("\n(%d): %s", index, el);
 }
 
 int main () {
 
 
-	int integers[] = {1, 2, 3, 4, 5, 6, 7};
-	IntArray array = Array_from(integers, 7);
+	char* strings[] = {"Soham", "Karandikar", "Hello", "World"};
+	StringArray array = Array_from(strings, 4);
+
+	array = Array_resize(array, 1);
 
 	Array_foreach(array, print);
-	printf("\n");
-
-	array = Array_insert(array, 99, 10);
-
-
-	Array_foreach(array, print);
-	printf("\n");
-
 	return 0;
 }
