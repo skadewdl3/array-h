@@ -11,7 +11,7 @@ int main () {
 	char* strings[] = {"Soham", "Karandikar", "Hello", "World"};
 	StringArray array = Array_from(strings, 4);
 
-	array = Array_resize(array, 1);
+	array = Array_push(array, "Bruh");
 
 	Array_foreach(array, print);
 	return 0;
