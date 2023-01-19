@@ -2,17 +2,16 @@
 
 int main () {
 
-	Array arr = Array_create(10);
+	IntArray arr = Array_create_int(10);
 
 	printf("%d\n", arr.length);
 
-	arr.items[0] = 1;
-	arr.items[1] = 10;
-	arr.items[2] = 20;
+	arr = Array_set_int(arr, 1, 0);
+	arr = Array_set_int(arr, 2, 1);
+	arr = Array_set_int(arr, 3, 2);
+	arr = Array_set_int(arr, 10, 10);
 
-	arr = Array_set(arr, 100, 7);
-
-	Array_print(arr);
+	Array_print_int(arr);
 
 
 
