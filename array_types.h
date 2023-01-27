@@ -69,9 +69,9 @@ typedef void (*StringArrayForeachFunction)(char*, int, StringArray);
 
 
 typedef int (*IntArrayMapFunction) (int, int, IntArray);
-typedef int (*FloatArrayMapFunction)(float, int, FloatArray);
-typedef int (*CharArrayMapFunction)(char, int, CharArray);
-typedef int (*StringArrayMapFunction)(char*, int, StringArray);
+typedef float (*FloatArrayMapFunction)(float, int, FloatArray);
+typedef char (*CharArrayMapFunction)(char, int, CharArray);
+typedef char* (*StringArrayMapFunction)(char*, int, StringArray);
 
 typedef int (*IntArrayFilterFunction) (int, int, IntArray);
 typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
