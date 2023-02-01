@@ -3,6 +3,19 @@
 #include <stdarg.h>
 #include <string.h>
 
+typedef struct {
+	int* items;
+	int used;
+	int length;
+} IntArray;
+
+typedef void (*IntArrayForeachFunction) (int, int, IntArray);
+typedef int (*IntArrayMapFunction) (int, int, IntArray);
+typedef int (*IntArrayFilterFunction) (int, int, IntArray);
+typedef void (*IntArraySetFunction) (int, int);
+typedef int (*IntArrayGetFunction) (int);
+typedef void (*IntArraySortFunction) (IntArray, IntArrayGetFunction, IntArraySetFunction, ArraySwapFunction);
+
 
 // Creates an array by allocating memory to it
 IntArray IntArray_create (int length) {

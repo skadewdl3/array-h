@@ -3,6 +3,19 @@
 #include <stdarg.h>
 #include <string.h>
 
+typedef struct {
+	char* items;
+	int used;
+	int length;
+} CharArray;
+
+typedef void (*CharArrayForeachFunction)(char, int, CharArray);
+typedef char (*CharArrayMapFunction)(char, int, CharArray);
+typedef int (*CharArrayFilterFunction)(char, int, CharArray);
+typedef void (*CharArraySetFunction) (char, int);
+typedef char (*CharArrayGetFunction) (int);
+typedef void (*CharArraySortFunction)(CharArray, CharArrayGetFunction ,CharArraySetFunction, ArraySwapFunction);
+
 CharArray CharArray_create (int length) {
 	// Allocates [length] * sizeof(char) bytes of memory and points array.items to it
 	CharArray array;
@@ -278,6 +291,12 @@ CharArray Array_sort_char (CharArray array, CharArraySortFunction function) {
 	}
 	function(sorted, get, set, swap);
 	return sorted;
+}
+
+char* Array_to_string_char (CharArray array) {
+	CharArray copy = Array_copy_char(array);
+	copy = Array_insert_char(array, array.used, '\0');
+	return copy.items;
 }
 
 /* PREDEFINED HELPER FUNCTIONS

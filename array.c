@@ -1,36 +1,30 @@
 #include <stdio.h>
 #include "array.h"
 
-void print (char* el, int index, StringArray array) {
-	printf("\n(%d): %s", index, el);
+void print (int el, int index, IntArray array) {
+	printf("\n(%d): %d", index, el);
+} 
+
+int modify (int el, int index, IntArray array) {
+	return ++el;
 }
 
-int filter (char* el, int index, StringArray array) {
-	return index == 0;
-}
 
-char* map (char* el, int index, StringArray array) {
-	char copy[100];
-	strcpy(copy, el);
-	printf("\n%s", copy);
-	return el;
-}
- 
 int main () {
 
+	int integers[] = {1, 2, 3, 4, 56};
 
-	char* strings[] = {"Soham", "Karandikar", "Hello", "World"};
-	StringArray array = Array_from(strings, 4);
+	IntArray array = Array_from(integers, 5);
 
-	StringArray mapped = Array_map(array, map);
+	IntArray mapped = Array_map(array, modify);
 
-	Array_foreach(array, print);
-	printf("\n");
-	Array_foreach(mapped, print);
-	printf("\n");
+	Array_foreach(array, INT_ARRAY_PRINT);
+	Array_foreach(mapped, INT_ARRAY_PRINT);
+
 
 	Array_destroy(array);
 	Array_destroy(mapped);
+
 
 	return 0;
 }

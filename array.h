@@ -27,8 +27,7 @@
 #define Array_filter(array, function) _Generic((array),					\
 	IntArray: Array_filter_int,											\
 	FloatArray: Array_filter_float,										\
-	CharArray: Array_filter_char,										\
-	StringArray: Array_filter_string									\
+	CharArray: Array_filter_char										\
 )(array, function);
 
 #define Array_destroy(array) _Generic((array),							\
@@ -73,8 +72,7 @@
 #define Array_copy(elements) _Generic((elements),						\
 	IntArray: Array_copy_int,											\
 	FloatArray: Array_copy_float,										\
-	CharArray: Array_copy_char,											\
-	StringArray: Array_copy_string										\
+	CharArray: Array_copy_char											\
 )(elements);
 
 #define Array_sort(array, sorter) _Generic((array),						\
@@ -110,8 +108,7 @@
 #define Array_count(array, element) _Generic((array),					\
 	IntArray: Array_count_int,											\
 	FloatArray: Array_count_float,										\
-	CharArray: Array_count_char,										\
-	StringArray: Array_count_string										\
+	CharArray: Array_count_char											\
 )(array, element);
 
 
@@ -125,8 +122,7 @@
 #define Array_map(array, map) _Generic((array),							\
 	IntArray: Array_map_int,											\
 	FloatArray: Array_map_float,										\
-	CharArray: Array_map_char,											\
-	StringArray: Array_map_string										\
+	CharArray: Array_map_char											\
 )(array, map);
 
 #define Array_pop(array) _Generic((array),								\
@@ -140,15 +136,13 @@
 #define Array_delete(array, index) _Generic((array),					\
 	IntArray: Array_delete_int,											\
 	FloatArray: Array_delete_float,										\
-	CharArray: Array_delete_char,										\
-	StringArray: Array_delete_string									\
+	CharArray: Array_delete_char										\
 )(array, index);
 
 
 #define Array_insert(array, element, index) _Generic((array),			\
 	IntArray: Array_insert_int,											\
 	FloatArray: Array_insert_float,										\
-	CharArray: Array_insert_char,										\
-	StringArray: Array_insert_string									\
+	CharArray: Array_insert_char										\
 )(array, element, index);
 

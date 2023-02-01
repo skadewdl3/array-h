@@ -3,6 +3,20 @@
 #include <stdarg.h>
 #include <string.h>
 
+typedef struct {
+	float* items;
+	int used;
+	int length;
+} FloatArray;
+
+typedef void (*FloatArrayForeachFunction)(float, int, FloatArray);
+typedef float (*FloatArrayMapFunction)(float, int, FloatArray);
+typedef int (*FloatArrayFilterFunction)(float, int, FloatArray);
+typedef void (*FloatArraySetFunction) (float, int);
+typedef float (*FloatArrayGetFunction) (int);
+typedef void (*FloatArraySortFunction)(FloatArray, FloatArrayGetFunction, FloatArraySetFunction, ArraySwapFunction);
+
+
 FloatArray FloatArray_create (int length) {
 	// Allocates [length] * sizeof(float) bytes of memory and points array.items to it
 	FloatArray array;
