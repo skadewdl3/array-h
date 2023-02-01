@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 
 typedef struct {
 	int* items;
 	int used;
 	int length;
 } IntArray;
+
 
 typedef void (*IntArrayForeachFunction) (int, int, IntArray);
 typedef int (*IntArrayMapFunction) (int, int, IntArray);
@@ -168,10 +167,10 @@ IntArray Array_filter_int (IntArray array, IntArrayFilterFunction function) {
    Callback is expected to return an int.
    This function does not alter the original array. */
 IntArray Array_map_int (IntArray array, IntArrayMapFunction function) {
-	IntArray mapped = IntArray_create(array.length);
+	IntArray mapped = IntArray_create(0);
 	for (int i = 0; i < array.used; i++) {
 		int new_el = function(array.items[i], i, array);
-		mapped.items[i] = new_el;
+		mapped = Array_push_int(mapped, new_el);
 	}
 	return mapped;
 }
@@ -235,7 +234,7 @@ IntArray Array_slice_int (IntArray array, int start, int end) {
 	return sliced;
 }
 
-// Deletes an element from the array. Alters the oriinal array.
+// Deletes an element from the array. Alters the original array.
 IntArray Array_delete_int (IntArray array, int index) {
 	if (!(index < array.length) || index < 0) {
 		Array_error(OUT_OF_BOUNDS);

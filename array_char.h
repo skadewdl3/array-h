@@ -27,7 +27,7 @@ CharArray CharArray_create (int length) {
 		return array;	
 	}
 	for (int i = 0; i < array.length; i++) {
-		array.items[i] = 0;
+		array.items[i] = '\0';
 	}
 	return array;	
 }
@@ -166,10 +166,10 @@ CharArray Array_filter_char (CharArray array, CharArrayFilterFunction function) 
    Callback is expected to return an char.
    This function does not alter the original array. */
 CharArray Array_map_char (CharArray array, CharArrayMapFunction function) {
-	CharArray mapped = CharArray_create(array.length);
+	CharArray mapped = CharArray_create(0);
 		for (int i = 0; i < array.used; i++) {
 		char new_el = function(array.items[i], i, array);
-		mapped.items[i] = new_el;
+		mapped = Array_push_char(mapped, new_el);
 	}
 	return mapped;
 }

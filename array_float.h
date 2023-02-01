@@ -169,10 +169,10 @@ FloatArray Array_filter_float (FloatArray array, FloatArrayFilterFunction functi
    Callback is expected to return an float.
    This function does not alter the original array. */
 FloatArray Array_map_float (FloatArray array, FloatArrayMapFunction function) {
-	FloatArray mapped = FloatArray_create(array.length);
+	FloatArray mapped = FloatArray_create(0);
 		for (int i = 0; i < array.used; i++) {
 		float new_el = function(array.items[i], i, array);
-		mapped.items[i] = new_el;
+		mapped = Array_push_float(mapped, new_el);
 	}
 	return mapped;
 }
