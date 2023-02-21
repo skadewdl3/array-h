@@ -105,8 +105,7 @@
 #define Array_exists(array, element) _Generic((array),					\
 	IntArray: Array_exists_int,											\
 	FloatArray: Array_exists_float,										\
-	CharArray: Array_exists_char,										\
-	StringArray: Array_exists_string									\
+	CharArray: Array_exists_char										\
 )(array, element);
 
 // done
